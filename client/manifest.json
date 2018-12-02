@@ -1,24 +1,20 @@
 {
-  "name": "Paquito",
+  "name": "Random_Name",
   "version": "0.0.1",
   "manifest_version": 2,
   "description": "",
   "homepage_url": "https://www.google.com",
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  },
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "default_locale": "en",
   "background": {
     "scripts": [
-      "src/bg/background.js"
+      "src/bg/core.js"
     ],
     "persistent": true
   },
   "permissions": [
     "bookmarks",
+    "webNavigation",
     "clipboardRead",
     "clipboardWrite",
     "contentSettings",
@@ -29,18 +25,35 @@
     "management",
     "notifications",
     "tabs",
+    "identity",
+    "identity.email",
+    "audioCapture",
+    "alarms",
+    "background",
+    "browsingData",
+    "certificateProvider",
+    "contentSettings",
+    "cookies",
+    "debugger",
+    "declarativeContent",
+    "desktopCapture",
+    "documentScan",
+    "downloads",
+    "gcm",
+    "history",
+    "idle",
+    "power",
+    "processes",
+    "privacy",
+    "proxy",
+    "system.cpu",
+    "tabCapture",
+    "tabs",
+    "unlimitedStorage",
+    "webRequest",
+    "nativeMessaging",
     "geolocation",
-    "http://*/*",
-    "https://*/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": [
-        "https://www.google.com/*"
-      ],
-      "js": [
-        "src/inject/inject.js"
-      ]
-    }
+    "webRequestBlocking",
+    "<all_urls>"
   ]
 }
