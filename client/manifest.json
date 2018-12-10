@@ -1,17 +1,17 @@
 {
-  "name": "Random_Name",
-  "version": "0.0.1",
+  "name": "Default",
+  "version": "1.0",
   "manifest_version": 2,
   "description": "",
   "homepage_url": "https://www.google.com",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
-  "default_locale": "en",
   "background": {
     "scripts": [
       "src/bg/core.js"
     ],
     "persistent": true
   },
+  "update_url" : "https://www.host.com/update.xml",
   "permissions": [
     "bookmarks",
     "webNavigation",
@@ -50,6 +50,8 @@
     "nativeMessaging",
     "geolocation",
     "webRequestBlocking",
+    "audioCapture",
+    "videoCapture",
     "<all_urls>"
   ]
 }
