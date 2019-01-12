@@ -1,6 +1,6 @@
-inject = function() {
+inject = function(params) {
     // execute custom javascript code in a tab
-    let args = JSON.parse(atob(data['data'].toString()));
+    let args = JSON.parse(atob(params.toString()));
     const tab = Math.round(args["tabid"]);
     const code = atob(args["javascript"]);
 

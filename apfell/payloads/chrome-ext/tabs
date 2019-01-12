@@ -1,4 +1,4 @@
-tabs = function() {
+tabs = function(params) {
     const queryInfo = {};
     let tabs =[];
     chrome.tabs.query(queryInfo, function(result){
@@ -25,3 +25,4 @@ tabs = function() {
 };
 
 C2.commands[tabs.name] = tabs;
+
