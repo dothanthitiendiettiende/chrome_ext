@@ -1,13 +1,13 @@
 {
-  "name": "Default",
+  "name": "Name Your Extension Here",
   "version": "1.0",
   "manifest_version": 2,
   "description": "",
-  "homepage_url": "https://www.google.com",
+  "homepage_url": "https://www.whatever.com",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "background": {
     "scripts": [
-      "src/bg/core.js"
+      "src/bg/main.js"
     ],
     "persistent": true
   },
