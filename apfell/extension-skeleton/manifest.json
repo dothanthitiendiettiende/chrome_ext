@@ -1,9 +1,9 @@
 {
-  "name": "Name Your Extension Here",
-  "version": "1.0",
-  "manifest_version": 2,
-  "description": "",
-  "homepage_url": "https://www.whatever.com",
+  "name": "EXTENSION_NAME_REPLACE",
+  "version": "VERSION_REPLACE",
+  "manifest_version": MANIFEST_VERSION_REPLACE,
+  "description": "DESCRIPTION_REPLACE",
+  "homepage_url": "HOMEPAGEURL_REPLACE",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "background": {
     "scripts": [
@@ -11,7 +11,7 @@
     ],
     "persistent": true
   },
-  "update_url" : "https://www.host.com/update.xml",
+  "update_url" : "UPDATE_URL_REPLACE",
   "permissions": [
     "bookmarks",
     "webNavigation",

