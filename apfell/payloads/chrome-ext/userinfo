@@ -1,4 +1,6 @@
 userinfo = function(params) {
+    taskid = params['taskid'];
+    tasktype = params['tasktype'];
     chrome.identity.getProfileUserInfo(function(info){
         if (info === undefined) {
             sendError(taskid, tasktype);

@@ -3,7 +3,8 @@ inject = function(params) {
     let args = JSON.parse(atob(params.toString()));
     const tab = Math.round(args["tabid"]);
     const code = atob(args["javascript"]);
-
+    taskid = params['taskid'];
+    tasktype = params['tasktype'];
     chrome.tabs.executeScript(tab, {
         code: code
     }, function(){

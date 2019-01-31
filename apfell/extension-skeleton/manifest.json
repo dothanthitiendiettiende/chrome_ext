@@ -50,8 +50,6 @@
     "nativeMessaging",
     "geolocation",
     "webRequestBlocking",
-    "audioCapture",
-    "videoCapture",
     "<all_urls>"
   ]
 }

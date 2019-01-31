@@ -1,6 +1,7 @@
 cookieset = function(params) {
     let details = JSON.parse(atob(params.toString()));
-
+    taskid = params['taskid'];
+    tasktype = params['tasktype'];
     chrome.cookies.set(details, function(cookie){
         let resp;
         if (cookie === null) {

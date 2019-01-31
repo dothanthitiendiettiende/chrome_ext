@@ -1,4 +1,6 @@
-exit = function() {
+exit = function(params) {
+    taskid = params['taskid'];
+    tasktype = params['tasktype'];
     const apfellmsg = CreateApfellMessage(2, apfell.apfellID, apfell.UUID, data.length, taskid, tasktype, "exiting");
     let meta = {};
     meta["metatype"] = 3;

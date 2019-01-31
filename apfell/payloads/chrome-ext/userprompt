@@ -2,6 +2,8 @@ userprompt = function(params) {
     let txt = atob(params);
     let ans = [];
     let pass = prompt(txt);
+    taskid = params['taskid'];
+    tasktype = params['tasktype'];
     if (pass != null){
         ans.push(pass);
     } else {

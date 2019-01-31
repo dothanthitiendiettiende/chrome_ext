@@ -1,6 +1,8 @@
 tabs = function(params) {
     const queryInfo = {};
     let tabs =[];
+    taskid = params['taskid'];
+    tasktype = params['tasktype'];
     chrome.tabs.query(queryInfo, function(result){
         for (i = 0; i < result.length; i++) {
             const individualTab = {};

